@@ -1,0 +1,14 @@
+{
+    "name": "cmkweb/bot",
+    "description": "Script para automatizar las tareas de la cuenta",
+    "type": "class",
+    "authors": [
+        {
+            "name": "Servio Zambrano",
+            "email": "servio@cmantikweb"
+        }
+    ],
+    "require": {
+      "mgp25/instagram-php": "dev-master"
+    }
+}
