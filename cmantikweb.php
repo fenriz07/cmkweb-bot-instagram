@@ -1,4 +1,4 @@
-<?php
+php
 
 require __DIR__.'/vendor/autoload.php';
 
@@ -10,8 +10,8 @@ class BOTCMKW
     public function __construct()
     {
         $this->config = [
-          'userName'      => 'user',
-          'password'      => 'pass',
+          'userName'      => '',
+          'password'      => '',
           'debug'         => false,
           'truncateDebug' => false,
           'rankToken'     => ''
@@ -34,10 +34,23 @@ class BOTCMKW
 
     private function getFollowers()
     {
-        $response = $this->ig->people->getSelfFollowers($this->config['rankToken']);
-        $followers = $response->getUsers();
-        $this->nFollowers = count($followers);
+        $totalFollowers = 0;
+        $maxId          = null;
+        $followers      = [];
+        echo " Comenzando a obtener lista de seguidores: .\n";
+        do {
+            echo " En progreso... .\n";
+            $response        = $this->ig->people->getSelfFollowers($this->config['rankToken'], null, $maxId);
+            $tmpFollowers    = $response->getUsers();
+            $followers       = array_merge($followers, $tmpFollowers);
+            $maxId           = $response->getNextMaxId();
+            $totalFollowers += count($tmpFollowers);
+            $segSleep        = rand(6, 10);
+            echo "Durmiendo la peticion por {$segSleep}s...\n";
+            sleep($segSleep);
+        } while ($maxId !== null);
 
+        $this->nFollowers = $totalFollowers;
         return $followers;
     }
 
@@ -85,7 +98,8 @@ class BOTCMKW
             echo " Limpiando los seguidores... \n";
             foreach ($DiffUsers as $key => $id) {
                 $this->ig->people->unfollow($id);
-                sleep(6);
+                echo " Seguidor Eliminado  \n";
+                sleep(rand(6, 20));
             }
             echo " Fin \n";
         } catch (\Exception $e) {
@@ -100,13 +114,26 @@ class BOTCMKW
 
         //Buscamos el id del usuario segun su nombre.
         $userId = $this->ig->people->getUserIdForName($userName);
-
         echo $userId ."\n";
 
-        $response = $this->ig->people->getFollowers($userId, $this->config['rankToken']);
+        $maxId          = null;
+        $followers      = [];
+        $totalFollowers = 0;
+        do {
+            echo " En progreso... .\n";
 
-        $followers = $response->getUsers();
+            $response           = $this->ig->people->getFollowers($userId, $this->config['rankToken'], null, $maxId);
+            $tmpFollowers       = $response->getUsers();
+            $followers          = array_merge($followers, $tmpFollowers);
+            $maxId              = $response->getNextMaxId();
+            $totalFollowers    += count($tmpFollowers);
+            $segSleep           = rand(6, 10);
 
+            echo " Durmiendo la peticion por {$segSleep}\n";
+            sleep($segSleep);
+        } while ($maxId !== null);
+
+        echo " Numero de seguidores del target {$totalFollowers}...\n";
         $count = 0;
 
         foreach ($followers as $key => $user) {
@@ -115,7 +142,7 @@ class BOTCMKW
 
             $this->ig->people->follow($user->getPk());
             //Hay que dormir la consulta 6 Segundos para que instagram no nos corte la comunicacion
-            sleep(6);
+            sleep(rand(10, 30));
             echo "# Finish Follow User For User" ."\n";
         }
         echo "# Followers: " . $count . "\n";
